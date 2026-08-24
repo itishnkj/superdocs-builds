@@ -2,12 +2,14 @@
 
 **DIY editor toolkit versus hosted document editing**
 
-Built by **itishnkj** for the SuperDocs Task 2 assigned build:
+**Submitted by Nitish Kumar Jha** (`itishnkj`) for the SuperDocs Task 2 assigned build:
 **“Editor toolkit plus your own model versus a hosted editing harness.”**
 
 This submission serves product engineers who already have a rich-text editor and
 need to add AI editing without losing control of review, document state, or
 operational evidence.
+
+**Published app:** [https://ai-editing-lab.replit.app](https://ai-editing-lab.replit.app)
 
 ![AI Editing Lab desktop editor and review view](screenshots/ai-editing-lab-desktop.jpg)
 
@@ -15,6 +17,16 @@ operational evidence.
 > [`superdocsapp/superdocs-builds`](https://github.com/superdocsapp/superdocs-builds).
 > This README and source bundle are intended for the pull request from the
 > `itishnkj` GitHub account; no email address is included in the repository.
+
+## Why this build goes beyond the minimum task
+
+The task can be satisfied with one editor toolkit implementation beside one
+hosted implementation. I intentionally built a reusable comparison harness
+instead: the same document, prompt, review flow, and evidence surface can run
+through both engines side by side. In future use, the DIY operator or model can
+be changed without rebuilding the comparison UI, making it possible to compare
+new DIY strategies against SuperDocs on the same input rather than relying on
+separate demos or memory.
 
 ## What this build demonstrates
 
@@ -97,6 +109,9 @@ The source is a snapshot of the working pnpm workspace used for the build.
 The original workspace keeps the `@workspace/*` package aliases used by the
 frontend and API packages; this submission folder intentionally contains no
 `node_modules`, build output, credentials, or private environment values.
+
+The hosted version is available directly at
+[https://ai-editing-lab.replit.app](https://ai-editing-lab.replit.app).
 
 ## Running the build
 
@@ -183,4 +198,5 @@ content was untouched. Those claims require human review against each prompt.
 
 ## Attribution
 
-I built this for the SuperDocs Task 2 engineering comparison assignment.
+This task was submitted by **Nitish Kumar Jha** (`itishnkj`) for the SuperDocs
+Task 2 engineering comparison assignment.
