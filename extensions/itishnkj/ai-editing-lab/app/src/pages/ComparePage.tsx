@@ -12,6 +12,7 @@ import {
   GitCompare,
   Loader2,
   Play,
+  Upload,
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
@@ -20,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import {
   evaluateFormatting,
   stableDocumentHash,
@@ -42,6 +44,8 @@ import {
   createTelemetryDraftForRequest,
 } from '@/lib/telemetry-workflows';
 import { usePreferences } from '@/lib/preferences';
+import { importDocument } from '@/lib/import/importDocument';
+import { DocumentImportError } from '@/lib/import/types';
 
 const EMPTY_REVIEW: ReviewerScore = {
   instructionAdherence: 0,
@@ -77,16 +81,18 @@ function ScoreControl({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <div className="flex gap-1">
+      <div className="grid grid-cols-5 gap-1" role="radiogroup" aria-label={label}>
         {[1, 2, 3, 4, 5].map((score) => (
           <button
             type="button"
             key={score}
             onClick={() => onChange(score)}
             aria-label={`${label}: ${score} of 5`}
-            className={`h-6 w-6 rounded border text-[11px] font-medium transition ${
+            aria-checked={value === score}
+            role="radio"
+            className={`h-8 w-8 rounded-md border text-xs font-medium transition ${
               value === score
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'bg-background text-muted-foreground hover:border-primary/40'
@@ -128,8 +134,8 @@ function ResultPanel({
     ['headings', 'bold', 'italic', 'links', 'lists', 'blockquotes', 'tables'],
   );
   return (
-    <Card className="flex min-w-0 flex-col">
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/20 p-3">
+    <Card className="flex min-w-0 max-w-full flex-col overflow-hidden">
+      <div className="flex items-start justify-between gap-2 border-b bg-muted/20 p-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold">{title}</h2>
           <p className="text-[11px] text-muted-foreground">
@@ -140,13 +146,13 @@ function ResultPanel({
         </div>
         <Badge
           variant="outline"
-          className={
+            className={`shrink-0 ${
             formatting.status === 'PASS'
               ? 'border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
               : formatting.status === 'N/A'
                 ? ''
                 : 'border-amber-500/30 text-amber-700 dark:text-amber-400'
-          }
+          }`}
         >
           Formatting {formatting.status}
         </Badge>
@@ -154,22 +160,71 @@ function ResultPanel({
 
       <div className="min-w-0 space-y-4 p-4">
         {candidate ? (
-          <div className="max-h-96 overflow-auto rounded-md border bg-background">
+          <div className="max-h-80 max-w-full overflow-auto rounded-md border bg-background">
             <div
-              className="prose prose-sm max-w-none p-4 dark:prose-invert"
+              className="prose prose-sm min-w-0 max-w-none break-words p-4 [overflow-wrap:anywhere] dark:prose-invert [&_*]:max-w-full [&_table]:table-fixed [&_table]:w-full"
               dangerouslySetInnerHTML={{ __html: candidate }}
             />
           </div>
         ) : hostedProposal ? (
-          <div className="rounded-md border border-primary/25 bg-primary/5 p-4">
-            <p className="text-sm font-medium">Hosted review proposal ready</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              SuperDocs returned {result.proposedChanges.length} proposed{' '}
-              {result.proposedChanges.length === 1 ? 'change' : 'changes'} for
-              review. Its hosted workflow keeps those changes pending instead
-              of returning a complete replacement document, so the structured
-              before-and-after details appear below.
-            </p>
+          <div className="max-h-80 max-w-full overflow-y-auto overscroll-contain rounded-md border border-primary/25 bg-primary/5">
+            <div className="p-4">
+              <p className="text-sm font-medium">Hosted review proposal ready</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                SuperDocs returned {result.proposedChanges.length} proposed{' '}
+                {result.proposedChanges.length === 1 ? 'change' : 'changes'} for
+                review. Its hosted workflow keeps those changes pending instead
+                of returning a complete replacement document, so the structured
+                before-and-after details appear below.
+              </p>
+            </div>
+            <div className="border-t border-primary/20 p-3 text-xs">
+              <p className="font-semibold">
+                Hosted review batch {result?.review?.batchNumber}
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                Comparison runs retain the provider’s proposed chunks without
+                approving or applying them to your document.
+              </p>
+              <div className="mt-2 space-y-2">
+                {result.proposedChanges.map((change) => (
+                  <div key={change.id} className="rounded border bg-background p-2">
+                    <p className="font-medium">{change.chunkId ?? change.target ?? 'Document chunk'}</p>
+                    <p className="mt-1 text-muted-foreground">{change.explanation ?? 'No provider explanation returned.'}</p>
+                    {(change.oldHtml || change.newHtml) && (
+                      <div className="mt-2 grid gap-2">
+                        {change.oldHtml && (
+                          <div>
+                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Before
+                            </p>
+                            <div className="max-w-full overflow-x-auto rounded border bg-muted/20">
+                              <div
+                                className="prose prose-xs min-w-0 max-w-none break-words p-2 [overflow-wrap:anywhere] dark:prose-invert [&_*]:max-w-full [&_table]:table-fixed [&_table]:w-full"
+                                dangerouslySetInnerHTML={{ __html: change.oldHtml }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {change.newHtml && (
+                          <div>
+                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                              Proposed
+                            </p>
+                            <div className="max-w-full overflow-x-auto rounded border border-primary/25 bg-primary/5">
+                              <div
+                                className="prose prose-xs min-w-0 max-w-none break-words p-2 [overflow-wrap:anywhere] dark:prose-invert [&_*]:max-w-full [&_table]:table-fixed [&_table]:w-full"
+                                dangerouslySetInnerHTML={{ __html: change.newHtml }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
@@ -182,111 +237,18 @@ function ResultPanel({
             </p>
           </div>
         )}
-        {hostedProposal && (
-          <div className="rounded-md border border-primary/25 bg-primary/5 p-3 text-xs">
-            <p className="font-semibold">
-              Hosted review batch {result?.review?.batchNumber}
-            </p>
-            <p className="mt-1 text-muted-foreground">
-              Comparison runs retain the provider’s proposed chunks without
-              approving or applying them to your document.
-            </p>
-            <div className="mt-2 space-y-2">
-              {result.proposedChanges.map((change) => (
-                <div key={change.id} className="rounded border bg-background p-2">
-                  <p className="font-medium">{change.chunkId ?? change.target ?? 'Document chunk'}</p>
-                  <p className="mt-1 text-muted-foreground">{change.explanation ?? 'No provider explanation returned.'}</p>
-                  {(change.oldHtml || change.newHtml) && (
-                    <div className="mt-2 grid gap-2">
-                      {change.oldHtml && (
-                        <div>
-                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Before
-                          </p>
-                          <div className="overflow-x-auto rounded border bg-muted/20">
-                            <div
-                              className="prose prose-xs max-w-none p-2 dark:prose-invert"
-                              dangerouslySetInnerHTML={{ __html: change.oldHtml }}
-                            />
-                          </div>
-                        </div>
-                      )}
-                      {change.newHtml && (
-                        <div>
-                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                            Proposed
-                          </p>
-                          <div className="overflow-x-auto rounded border border-primary/25 bg-primary/5">
-                            <div
-                              className="prose prose-xs max-w-none p-2 dark:prose-invert"
-                              dangerouslySetInnerHTML={{ __html: change.newHtml }}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            {onCancelHostedReview && (
-              <Button
-                className="mt-3"
-                variant="outline"
-                size="sm"
-                onClick={onCancelHostedReview}
-                disabled={cancellingHostedReview}
-                data-testid="button-cancel-hosted-compare"
-              >
-                Cancel hosted review
-              </Button>
-            )}
-          </div>
+        {hostedProposal && onCancelHostedReview && (
+          <Button
+            className="h-10 w-full"
+            variant="outline"
+            size="sm"
+            onClick={onCancelHostedReview}
+            disabled={cancellingHostedReview}
+            data-testid="button-cancel-hosted-compare"
+          >
+            Cancel hosted review
+          </Button>
         )}
-
-        <div className="rounded-md border bg-muted/10 p-3">
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider">
-            Your score
-          </h3>
-          <div className="space-y-2.5">
-            <ScoreControl
-              label="Instruction adherence"
-              value={review.instructionAdherence}
-              onChange={(instructionAdherence) =>
-                onReview({ ...review, instructionAdherence })
-              }
-            />
-            <ScoreControl
-              label="Writing quality"
-              value={review.writingQuality}
-              onChange={(writingQuality) =>
-                onReview({ ...review, writingQuality })
-              }
-            />
-            <ScoreControl
-              label="Formatting preservation"
-              value={review.formattingPreservation}
-              onChange={(formattingPreservation) =>
-                onReview({ ...review, formattingPreservation })
-              }
-            />
-            <ScoreControl
-              label="Overall usefulness"
-              value={review.overallUsefulness}
-              onChange={(overallUsefulness) =>
-                onReview({ ...review, overallUsefulness })
-              }
-            />
-            <Textarea
-              value={review.notes}
-              onChange={(event) =>
-                onReview({ ...review, notes: event.target.value })
-              }
-              placeholder="Your notes…"
-              className="min-h-16 resize-none text-xs"
-            />
-          </div>
-        </div>
 
         <dl className="grid grid-cols-2 gap-2 rounded-md border p-3 text-xs">
           <dt className="text-muted-foreground">Input tokens</dt>
@@ -307,6 +269,50 @@ function ResultPanel({
           </dd>
         </dl>
       </div>
+      <div className="border-t bg-muted/10 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider">Your score</h3>
+          <span className="text-[10px] text-muted-foreground">Saved automatically</span>
+        </div>
+        <div className="space-y-3">
+          <ScoreControl
+            label="Instruction adherence"
+            value={review.instructionAdherence}
+            onChange={(instructionAdherence) =>
+              onReview({ ...review, instructionAdherence })
+            }
+          />
+          <ScoreControl
+            label="Writing quality"
+            value={review.writingQuality}
+            onChange={(writingQuality) =>
+              onReview({ ...review, writingQuality })
+            }
+          />
+          <ScoreControl
+            label="Formatting preservation"
+            value={review.formattingPreservation}
+            onChange={(formattingPreservation) =>
+              onReview({ ...review, formattingPreservation })
+            }
+          />
+          <ScoreControl
+            label="Overall usefulness"
+            value={review.overallUsefulness}
+            onChange={(overallUsefulness) =>
+              onReview({ ...review, overallUsefulness })
+            }
+          />
+          <Textarea
+            value={review.notes}
+            onChange={(event) =>
+              onReview({ ...review, notes: event.target.value })
+            }
+            placeholder="Your notes…"
+            className="min-h-20 resize-none text-xs"
+          />
+        </div>
+      </div>
     </Card>
   );
 }
@@ -317,8 +323,10 @@ export default function ComparePage() {
     documentSession,
     versions,
     compareRuns,
+    benchmarkRuns,
     addCompareRun,
     updateCompareRun,
+    startImportedDocument,
     logActivity,
     setLatestResults,
     telemetry,
@@ -334,6 +342,7 @@ export default function ComparePage() {
     'Make the executive summary more concise without changing unrelated content.',
   );
   const [isRunning, setIsRunning] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [isCancellingReview, setIsCancellingReview] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(
     compareRuns[0]?.id ?? null,
@@ -365,6 +374,48 @@ export default function ComparePage() {
       }),
     [currentDocumentHtml, instruction, observabilitySettings],
   );
+
+  const canReplaceDocument = () => {
+    if (compareRuns.some((run) => run.superdocsResult?.review)) {
+      toast.error(
+        'Cancel the pending hosted review in the current comparison before replacing the document.',
+      );
+      return false;
+    }
+    const wouldClearSession =
+      documentSession.sourceType === 'imported' ||
+      versions.length > 1 ||
+      compareRuns.length > 0 ||
+      benchmarkRuns.length > 0;
+    if (
+      (currentDocumentHtml !== documentSession.originalHtml || wouldClearSession) &&
+      !window.confirm(
+        'Replace this document? This starts a new document session and clears the current version history, comparisons, and benchmarks. Your chat and edit history stay available in History.',
+      )
+    ) {
+      return false;
+    }
+    return true;
+  };
+
+  const handleImportFile = async (file: File | null) => {
+    if (!file || isImporting || isRunning || !canReplaceDocument()) return;
+    setIsImporting(true);
+    try {
+      const imported = await importDocument(file);
+      startImportedDocument(imported);
+      setSelectedRunId(null);
+      toast.success(`Imported ${imported.originalFileName}.`);
+    } catch (error) {
+      toast.error(
+        error instanceof DocumentImportError
+          ? error.message
+          : 'This document could not be parsed. Try a DOCX, PDF, HTML, or TXT file.',
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const handleRunCompare = async () => {
     if (!instruction.trim() || !bothConfigured) return;
@@ -589,6 +640,28 @@ export default function ComparePage() {
                   The entire current document is used, frozen at the moment you
                   run the comparison.
                 </p>
+                <div className="mt-4 space-y-2">
+                  <label htmlFor="compare-upload" className="flex items-center gap-1.5 text-xs font-medium">
+                    <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                    Upload a document for this comparison
+                  </label>
+                  <Input
+                    id="compare-upload"
+                    type="file"
+                    accept=".docx,.pdf,.html,.htm,.txt"
+                    disabled={isRunning || isImporting}
+                    onChange={(event) => {
+                      void handleImportFile(event.target.files?.[0] ?? null);
+                      event.currentTarget.value = '';
+                    }}
+                    className="h-9 text-xs file:mr-2 file:border-0 file:bg-transparent file:text-xs file:font-medium"
+                    data-testid="input-compare-upload"
+                  />
+                  <p className="text-[10px] leading-relaxed text-muted-foreground">
+                    DOCX, PDF, HTML, and TXT are supported. Uploading starts a
+                    fresh document session and clears earlier comparisons.
+                  </p>
+                </div>
               </div>
             </li>
             <li className="flex gap-3">
@@ -684,7 +757,7 @@ export default function ComparePage() {
               </p>
             )}
           </div>
-          <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-3">
             <Card className="min-w-0">
               <div className="border-b bg-muted/20 p-3">
                 <h2 className="text-sm font-semibold">Original</h2>
