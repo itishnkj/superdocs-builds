@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/collapsible';
 import { diffWords, type DiffSegment } from '@/lib/history';
 import { stripHtml } from '@/lib/telemetry';
-import { cn } from '@/lib/utils';
 
 const MAX_INLINE_DIFF_CHARS = 1600;
 
@@ -56,24 +55,24 @@ function BeforeAfter({
   afterLabel: string;
 }) {
   return (
-    <div className="grid gap-2 text-xs">
-      <div className="rounded-md border bg-muted/30 p-2.5">
+    <div className="grid min-w-0 max-w-full gap-2 text-xs">
+      <div className="min-w-0 max-w-full rounded-md border bg-muted/30 p-2.5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           Before
         </p>
         <div
-          className="prose-sm line-clamp-5 text-muted-foreground [&_a]:underline"
+          className="prose-sm max-h-32 max-w-full overflow-hidden break-words text-muted-foreground [&_*]:max-w-full [&_*]:break-words [&_a]:underline [&_table]:table-fixed [&_table]:w-full"
           dangerouslySetInnerHTML={{
             __html: beforeHtml || '<em>No existing content</em>',
           }}
         />
       </div>
-      <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2.5">
+      <div className="min-w-0 max-w-full rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2.5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
           {afterLabel}
         </p>
         <div
-          className="prose-sm line-clamp-6 [&_a]:underline"
+          className="prose-sm max-h-36 max-w-full overflow-hidden break-words [&_*]:max-w-full [&_*]:break-words [&_a]:underline [&_table]:table-fixed [&_table]:w-full"
           dangerouslySetInnerHTML={{
             __html: afterHtml || '<em>This content is removed</em>',
           }}
@@ -189,7 +188,7 @@ export function ReviewCard({
 
   return (
     <article
-      className="rounded-lg border border-primary/25 bg-card p-3 shadow-sm"
+      className="min-w-0 max-w-full overflow-hidden rounded-lg border border-primary/25 bg-card p-3 shadow-sm"
       data-testid={`card-review-${result.engine}`}
     >
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -262,52 +261,57 @@ export function ReviewCard({
         </p>
       )}
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="sticky bottom-0 z-10 -mx-3 mt-3 border-t border-primary/15 bg-card/95 px-3 pb-1 pt-3 backdrop-blur supports-[backdrop-filter]:bg-card/85">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Review actions
+        </p>
+        <div className="grid grid-cols-2 gap-2">
         <Button
           size="sm"
-          className="col-span-2 w-full"
+          className="col-span-2 h-10 w-full text-sm font-semibold"
           onClick={() => onAccept(result)}
           disabled={busy}
           data-testid={`button-accept-${result.engine}`}
         >
-          <Check className="mr-1 h-3.5 w-3.5" />
+          <Check className="mr-1.5 h-4 w-4" />
           {result.review ? 'Accept these changes' : 'Accept'}
         </Button>
         <Button
           variant="outline"
           size="sm"
-          className="min-w-0"
+          className="h-10 min-w-0 whitespace-normal"
           onClick={() => onReject(result)}
           disabled={busy}
           data-testid={`button-reject-${result.engine}`}
         >
-          <X className="mr-1 h-3.5 w-3.5" />
+          <X className="mr-1.5 h-4 w-4" />
           Reject
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          className="min-w-0 px-2 text-xs"
+          className="h-10 min-w-0 whitespace-normal px-2 text-xs"
           onClick={() => onAskAgain(result)}
           disabled={busy}
           data-testid={`button-ask-again-${result.engine}`}
         >
-          <RefreshCcw className="mr-1 h-3.5 w-3.5" />
+          <RefreshCcw className="mr-1.5 h-4 w-4 shrink-0" />
           Try another approach
         </Button>
+        </div>
+        {result.review && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2 h-9 w-full whitespace-normal text-muted-foreground"
+            onClick={() => onCancelHosted(result)}
+            disabled={busy}
+            data-testid={`button-cancel-hosted-${result.engine}`}
+          >
+            Stop this review — keep my document as is
+          </Button>
+        )}
       </div>
-      {result.review && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn('mt-1.5 w-full text-muted-foreground')}
-          onClick={() => onCancelHosted(result)}
-          disabled={busy}
-          data-testid={`button-cancel-hosted-${result.engine}`}
-        >
-          Stop this review — keep my document as is
-        </Button>
-      )}
     </article>
   );
 }
