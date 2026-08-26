@@ -282,8 +282,8 @@ export function AssistantPanel({
         )}
       </div>
 
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-3 p-3" data-testid="thread-assistant">
+      <ScrollArea className="min-h-0 flex-1 overflow-x-hidden">
+        <div className="min-w-0 space-y-3 overflow-x-hidden p-3" data-testid="thread-assistant">
           {isEmpty ? (
             <div className="flex flex-col items-center px-4 py-10 text-center">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent">
@@ -377,7 +377,10 @@ export function AssistantPanel({
           )}
 
           {pendingResults.length > 0 && reviewScope && (
-            <section className="space-y-2 pt-1" aria-label="Suggested edits awaiting review">
+            <section
+              className="min-w-0 space-y-2 pt-1"
+              aria-label="Suggested edits awaiting review"
+            >
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   For your review
@@ -461,7 +464,7 @@ export function AssistantPanel({
         </div>
       </ScrollArea>
 
-      <div className="shrink-0 space-y-2 border-t p-3">
+      <div className="min-w-0 shrink-0 space-y-2 border-t bg-card p-3">
         <div className="flex items-center gap-1.5">
           {scope === 'selection' ? (
             <span
