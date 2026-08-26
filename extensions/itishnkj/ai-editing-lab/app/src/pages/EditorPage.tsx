@@ -202,7 +202,7 @@ export default function EditorPage() {
   const [newDocumentOpen, setNewDocumentOpen] = useState(false);
   const [assistantDrawerOpen, setAssistantDrawerOpen] = useState(false);
   const [assistantDrawerSnap, setAssistantDrawerSnap] = useState<number | string | null>(
-    0.88,
+    1,
   );
   const [onboardingOpen, setOnboardingOpen] = useState(
     () => !preferences.onboardingDismissed,
@@ -1402,13 +1402,12 @@ export default function EditorPage() {
           <Drawer
             open={assistantDrawerOpen}
             onOpenChange={setAssistantDrawerOpen}
-            snapPoints={[0.55, 0.88, 1]}
+            snapPoints={[1]}
             activeSnapPoint={assistantDrawerSnap}
             setActiveSnapPoint={setAssistantDrawerSnap}
-            fadeFromIndex={1}
             fixed
           >
-            <DrawerContent className="h-[100dvh] max-h-[100dvh] overflow-hidden">
+            <DrawerContent className="h-[100dvh] max-h-[100dvh] overflow-hidden rounded-none">
               <DrawerHeader className="sr-only">
                 <DrawerTitle>AI Assistant</DrawerTitle>
               </DrawerHeader>
