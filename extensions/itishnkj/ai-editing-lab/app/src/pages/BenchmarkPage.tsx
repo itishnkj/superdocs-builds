@@ -569,29 +569,59 @@ No automatic conclusion is generated. Add qualitative observations here.
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Benchmark</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Run a fixed set of five editing tests through both engines and get a
-          reproducible, exportable report. Your document is never changed.
+          A repeatable test run for measuring how the editing engines handle the
+          same five tasks. It is separate from Compare: Benchmark runs
+          predefined tests and records measurements; Compare lets you give both
+          engines one instruction and manually judge the outputs.
         </p>
       </header>
 
       <Card>
         <CardContent className="space-y-4 p-4 md:p-6">
-          <div className="space-y-2 text-sm">
-            <p>
-              The benchmark sends the same five editing tasks — summarizing,
-              rewriting, formatting, and more — to{' '}
-              {engines.length === 2
-                ? 'both engines'
-                : engines.length === 1
-                  ? 'the selected engine'
-                  : 'the engines you pick in settings'}{' '}
-              and records how each one does.
-            </p>
+          <div className="space-y-4 rounded-md border bg-muted/10 p-4">
+            <div>
+              <h2 className="text-sm font-semibold">How this benchmark works</h2>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                A benchmark run is a controlled measurement, not an automatic
+                quality verdict. It sends the same input to the selected engine
+                or engines and keeps every request in one exportable report.
+              </p>
+            </div>
+            <ol className="grid gap-3 text-xs md:grid-cols-4">
+              <li className="rounded border bg-background p-3">
+                <strong className="block text-sm">1. Choose the source</strong>
+                <span className="mt-1 block leading-relaxed text-muted-foreground">
+                  Use the standard test document, or choose the current imported
+                  document after uploading one in Editor or Compare.
+                </span>
+              </li>
+              <li className="rounded border bg-background p-3">
+                <strong className="block text-sm">2. Run five tasks</strong>
+                <span className="mt-1 block leading-relaxed text-muted-foreground">
+                  Each task tests a different editing behavior, from grammar
+                  correction to a document-level insertion.
+                </span>
+              </li>
+              <li className="rounded border bg-background p-3">
+                <strong className="block text-sm">3. Record evidence</strong>
+                <span className="mt-1 block leading-relaxed text-muted-foreground">
+                  The report records success, response time, retries, available
+                  token or usage data, and formatting checks.
+                </span>
+              </li>
+              <li className="rounded border bg-background p-3">
+                <strong className="block text-sm">4. Review limits</strong>
+                <span className="mt-1 block leading-relaxed text-muted-foreground">
+                  Formatting checks are automated; meaning, tone, and usefulness
+                  still need human review. No winner is declared automatically.
+                </span>
+              </li>
+            </ol>
             <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
               Fairness guarantee: every request starts from the same frozen
-              document, and SuperDocs hosted review jobs are recorded and then
-              cancelled — nothing is ever applied to a document.
+              document. SuperDocs hosted review jobs are recorded and then
+              cancelled, so no benchmark result changes a document.
             </p>
           </div>
 
@@ -808,9 +838,9 @@ No automatic conclusion is generated. Add qualitative observations here.
 
       <section>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          The five tests
+          What the five tests measure
         </p>
-        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {BENCHMARK_CASES.map((testCase, index) => (
             <Card key={testCase.id}>
               <CardContent className="p-3">
@@ -820,11 +850,22 @@ No automatic conclusion is generated. Add qualitative observations here.
                 <h2 className="mt-1 text-sm font-semibold">
                   {testCase.label}
                 </h2>
-                <p className="mt-2 line-clamp-4 text-[11px] leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                  What it checks
+                </p>
+                <p className="mt-1 line-clamp-4 text-[11px] leading-relaxed text-muted-foreground">
+                  {testCase.purpose}
+                </p>
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Instruction sent
+                </p>
+                <p className="mt-1 line-clamp-3 text-[11px] leading-relaxed text-muted-foreground">
                   {testCase.instruction}
                 </p>
                 <Badge variant="outline" className="mt-3 text-[9px]">
-                  {testCase.scope === 'selection' ? 'selected text' : 'whole document'}
+                  {testCase.scope === 'selection'
+                    ? 'selected paragraph'
+                    : 'whole document'}
                 </Badge>
               </CardContent>
             </Card>
