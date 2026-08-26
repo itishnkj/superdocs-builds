@@ -76,6 +76,7 @@ export type BenchmarkInvariant =
 export type BenchmarkCase = {
   id: string;
   label: string;
+  purpose: string;
   scope: 'selection' | 'document';
   targetChunkId: string | null;
   instruction: string;
@@ -86,6 +87,8 @@ export const BENCHMARK_CASES: BenchmarkCase[] = [
   {
     id: 'test-01-concision',
     label: 'Concision',
+    purpose:
+      'Checks whether the engine can shorten one paragraph while keeping its meaning and professional tone.',
     scope: 'selection',
     targetChunkId: 'introduction',
     instruction:
@@ -95,6 +98,8 @@ export const BENCHMARK_CASES: BenchmarkCase[] = [
   {
     id: 'test-02-professional-tone',
     label: 'Professional tone',
+    purpose:
+      'Checks whether the engine can turn casual wording into language suitable for a client update.',
     scope: 'selection',
     targetChunkId: 'casual-status',
     instruction:
@@ -104,6 +109,8 @@ export const BENCHMARK_CASES: BenchmarkCase[] = [
   {
     id: 'test-03-grammar',
     label: 'Grammar',
+    purpose:
+      'Checks whether the engine can fix grammar and punctuation without rewriting the message.',
     scope: 'selection',
     targetChunkId: 'grammar-target',
     instruction:
@@ -113,6 +120,8 @@ export const BENCHMARK_CASES: BenchmarkCase[] = [
   {
     id: 'test-04-structural',
     label: 'Structural edit',
+    purpose:
+      'Checks whether the engine can change one paragraph into a short bullet list while preserving its information.',
     scope: 'selection',
     targetChunkId: 'structural-target',
     instruction:
@@ -122,6 +131,8 @@ export const BENCHMARK_CASES: BenchmarkCase[] = [
   {
     id: 'test-05-insertion',
     label: 'Document-level insertion',
+    purpose:
+      'Checks whether the engine can add a conclusion to the full document without rewriting unrelated content.',
     scope: 'document',
     targetChunkId: null,
     instruction:
