@@ -5,7 +5,6 @@ import {
   Activity,
   BarChart3,
   ChevronsUpDown,
-  FilePlus2,
   FileText,
   GitCompare,
   History,
@@ -352,19 +351,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
           </div>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                tooltip="New document"
-                onClick={() => {
-                  requestEditorIntent('new-document');
-                  navigate('/');
-                }}
-                data-testid="button-new-document"
-              >
-                <FilePlus2 />
-                <span>New document</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 tooltip="Upload document"
